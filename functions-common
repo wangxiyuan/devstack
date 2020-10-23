@@ -333,7 +333,7 @@ function _ensure_lsb_release {
     elif [[ -x $(command -v zypper 2>/dev/null) ]]; then
         sudo zypper -n install lsb-release
     elif [[ -x $(command -v dnf 2>/dev/null) ]]; then
-        sudo dnf install -y redhat-lsb-core
+        sudo dnf install -y redhat-lsb-core openeuler-lsb
     else
         die $LINENO "Unable to find or auto-install lsb_release"
     fi
@@ -399,6 +399,8 @@ function GetDistro {
         DISTRO="rhel${os_RELEASE::1}"
     elif [[ "$os_VENDOR" =~ (XenServer) ]]; then
         DISTRO="xs${os_RELEASE%.*}"
+    elif [[ "$os_VENDOR" =~ (openEuler) ]]; then
+        DISTRO="openEuler-$os_RELEASE"
     else
         # We can't make a good choice here.  Setting a sensible DISTRO
         # is part of the problem, but not the major issue -- we really
@@ -498,6 +500,13 @@ function is_ubuntu {
     [ "$os_PACKAGE" = "deb" ]
 }
 
+function is_openeuler {
+    if [[ -z "$os_VENDOR" ]]; then
+        GetOSVersion
+    fi
+
+    [[ "$os_VENDOR" =~ (openEuler) ]]
+}
 
 # Git Functions
 # =============
@@ -1057,6 +1066,8 @@ function _get_package_dir {
         pkg_dir=$base_dir/rpms
     elif is_suse; then
         pkg_dir=$base_dir/rpms-suse
+    elif is_openeuler; then
+        pkg_dir=$base_dir/rpms-openeuler
     else
         exit_distro_not_supported "list of packages"
     fi
@@ -1329,7 +1340,7 @@ function update_package_repo {
 function real_install_package {
     if is_ubuntu; then
         apt_get install "$@"
-    elif is_fedora; then
+    elif [[ is_fedora || is_openeuler ]]; then
         yum_install "$@"
     elif is_suse; then
         zypper_install "$@"
@@ -1372,7 +1383,7 @@ function is_package_installed {
 function uninstall_package {
     if is_ubuntu; then
         apt_get purge "$@"
-    elif is_fedora; then
+    elif [[ is_fedora || is_openeuler ]]; then
         sudo dnf remove -y "$@" ||:
     elif is_suse; then
         sudo zypper remove -y "$@" ||:

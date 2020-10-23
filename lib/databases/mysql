@@ -181,7 +181,7 @@ EOF
     elif is_suse; then
         install_package mariadb-server
         sudo systemctl enable $MYSQL_SERVICE_NAME
-    elif is_ubuntu; then
+    elif [[ is_ubuntu || is_openeuler ]]]; then
         install_package $MYSQL_SERVICE_NAME-server
     else
         exit_distro_not_supported "mysql installation"
